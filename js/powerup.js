@@ -89,9 +89,16 @@ TrelloPowerUp.initialize({
       });
   },
 
-  'card-badges': function(t, options) {
-    return getCardBadges(t, options);
-  }
+    'card-badges': function (t, options) {
+        return getCardBadges(t, options);
+    },
+
+    storage: function (t, payload) {
+        if (payload.key === FIELD_VALUES_KEY && payload.visibility === 'shared') {
+            // repaint the card that changed…
+            updateListSums();
+        }
+    }
 });
 
 // Utility functions
@@ -283,40 +290,6 @@ function calculateListSum(t, list, fields) {
     });
 }
 
-// Event handlers for real-time updates
-function setupEventHandlers() {
-  // Handle card moves between lists
-  TrelloPowerUp.on('card', 'moveCard', function(t, options) {
-    console.log('Card moved, updating sums...');
-    setTimeout(function() {
-      updateListSums();
-    }, 500); // Small delay to ensure move is complete
-  });
-
-  // Handle card updates (including field value changes)
-  TrelloPowerUp.on('card', 'updateCard', function(t, options) {
-    console.log('Card updated, updating sums...');
-    setTimeout(function() {
-      updateListSums();
-    }, 500);
-  });
-
-  // Handle new cards being created
-  TrelloPowerUp.on('list', 'addCard', function(t, options) {
-    console.log('Card added, updating sums...');
-    setTimeout(function() {
-      updateListSums();
-    }, 500);
-  });
-
-  // Handle cards being archived/deleted
-  TrelloPowerUp.on('card', 'removeCard', function(t, options) {
-    console.log('Card removed, updating sums...');
-    setTimeout(function() {
-      updateListSums();
-    }, 500);
-  });
-}
 
 // Auto-update sums when cards change
 function initializeAutoUpdate() {
