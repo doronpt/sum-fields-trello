@@ -102,7 +102,46 @@ TrelloPowerUp.initialize({
     },
 
     'card-badges': function (t, options) {
-        return getCardBadges(t, options);
+        // Dynamic badges with auto-refresh every 15 seconds
+        const timeoutPromise = new Promise(function(resolve) {
+            setTimeout(function() { resolve([]); }, 2000);
+        });
+
+        const dynamicBadgesPromise = t.get('board', 'shared', FIELDS_KEY)
+            .then(function(fields) {
+                if (!fields || fields.length === 0) {
+                    return [];
+                }
+
+                return fields.map(function(field) {
+                    return {
+                        // Dynamic badge: Trello will call this function again
+                        // every `refresh` seconds and repaint the value.
+                        dynamic: function () {
+                            return getCardBadgeForField(t, options, field)
+                                .then(function(badge) {
+                                    if (badge) {
+                                        // Add refresh interval to the badge
+                                        return Object.assign(badge, {
+                                            refresh: 15  // seconds – must be ≥ 10
+                                        });
+                                    }
+                                    return null;
+                                })
+                                .catch(function(error) {
+                                    console.warn('Error in dynamic badge for field', field.name, error);
+                                    return null;
+                                });
+                        }
+                    };
+                });
+            })
+            .catch(function(error) {
+                console.error('Error in card-badges:', error);
+                return [];
+            });
+
+        return Promise.race([dynamicBadgesPromise, timeoutPromise]);
     }
 }, {
     // Declare the appKey and appName if you have them
@@ -188,7 +227,51 @@ function calculateListSum(t) {
     return Promise.race([calculationPromise, timeoutPromise]);
 }
 
-// Get card badges - shows individual values and sum if first card
+// Get card badge for a specific field
+function getCardBadgeForField(t, options, field) {
+    const timeoutPromise = new Promise(function(resolve) {
+        setTimeout(function() {
+            resolve(null);
+        }, 3000); // 3 second timeout
+    });
+
+    const badgePromise = t.get('card', 'shared', FIELD_VALUES_KEY)
+        .then(function(values) {
+            values = values || {};
+            const value = values[field.id] || 0;
+
+            // Show individual value if it exists
+            if (value > 0) {
+                return {
+                    text: field.name + ': ' + value,
+                    color: 'blue'
+                };
+            }
+
+            // Check if this card should show sum
+            return calculateListSum(t)
+                .then(function(sums) {
+                    if (sums && sums[field.id]) {
+                        const sum = sums[field.id] || 0;
+                        if (sum > 0) {
+                            return {
+                                text: '∑ ' + field.name + ': ' + sum,
+                                color: 'green'
+                            };
+                        }
+                    }
+                    return null;
+                });
+        })
+        .catch(function(error) {
+            console.warn('Error in getCardBadgeForField:', error);
+            return null;
+        });
+
+    return Promise.race([badgePromise, timeoutPromise]);
+}
+
+// Get card badges - shows individual values and sum if first card (legacy function)
 function getCardBadges(t, options) {
     const timeoutPromise = new Promise(function(resolve) {
         setTimeout(function() {
