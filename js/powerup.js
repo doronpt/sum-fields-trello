@@ -86,8 +86,9 @@ TrelloPowerUp.initialize({
     },
 
     'card-badges': function (t, options) {
-        globalT = t;
-        return getCardBadges(t, options);
+        return t.render(function() {
+            return getCardBadges(t, options);
+        });
     }
 }, {
     // Declare the appKey and appName if you have them
@@ -210,10 +211,6 @@ function getCardBadges(t, options) {
             return [];
         });
 }
-
-TrelloPowerUp.iframe().render(function () {
-    return getCardBadges(t);
-});
 
 
 
