@@ -2,11 +2,13 @@
   "name": "Sum Up Fields",
   "details": "Add custom numeric fields to cards and automatically calculate sums per list",
   "author": "Sum Up Fields Team",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "capabilities": [
     "card-buttons",
     "card-detail-badges", 
     "card-badges",
+    "card-back-section",
+    "board-buttons",
     "show-settings"
   ],
   "connectors": {

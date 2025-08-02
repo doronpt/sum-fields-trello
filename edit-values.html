@@ -73,12 +73,12 @@
         values[fieldId] = value;
       });
       
+      console.log('Saving field values:', values);
+      
       t.set('card', 'shared', FIELD_VALUES_KEY, values)
         .then(function() {
-          // Trigger sum update
-          return updateListSums();
-        })
-        .then(function() {
+          console.log('Values saved successfully');
+          // Close popup immediately - sum will update automatically
           t.closePopup();
         })
         .catch(function(error) {
