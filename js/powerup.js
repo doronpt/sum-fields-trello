@@ -1,4 +1,6 @@
-// Sum Up Fields Power-Up
+// Sum Up Fields Power-Up v1.0.0
+console.log('Sum Up Fields Power-Up loading...');
+
 // Storage keys
 const FIELDS_KEY = 'sumup_fields';
 const FIELD_VALUES_KEY = 'sumup_field_values';
@@ -262,3 +264,5 @@ function initializeAutoUpdate() {
 
 // Initialize auto-update
 initializeAutoUpdate();
+
+console.log('Sum Up Fields Power-Up initialized successfully');
