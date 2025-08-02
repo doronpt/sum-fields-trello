@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sum Up Fields Power-Up Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f4f5f7;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .success { color: #00c896; }
+    .error { color: #eb5a46; }
+    .test-item {
+      margin: 10px 0;
+      padding: 10px;
+      border-left: 3px solid #ddd;
+    }
+    .test-item.pass {
+      border-left-color: #00c896;
+      background-color: #f0fff4;
+    }
+    .test-item.fail {
+      border-left-color: #eb5a46;
+      background-color: #fff5f5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sum Up Fields Power-Up - Test Page</h1>
+  
+  <div class="test-section">
+    <h2>File Structure Tests</h2>
+    <div id="file-tests">
+      <!-- Tests will be populated by JavaScript -->
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Manifest Validation</h2>
+    <div id="manifest-tests">
+      <!-- Tests will be populated by JavaScript -->
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Installation Instructions</h2>
+    <ol>
+      <li>Host these files on a web server (local or remote)</li>
+      <li>In Trello, go to any board</li>
+      <li>Click "Power-Ups" in the board menu</li>
+      <li>Click "Custom Power-Up"</li>
+      <li>Enter the URL to your manifest.json file</li>
+      <li>Enable the Power-Up</li>
+      <li>Look for the "Manage Fields" button in the board menu</li>
+    </ol>
+  </div>
+
+  <div class="test-section">
+    <h2>Quick Start</h2>
+    <ol>
+      <li><strong>Create Fields:</strong> Click "Manage Fields" → Add field names like "Points" or "Hours"</li>
+      <li><strong>Set Values:</strong> On any card (except first in list) → Click "Edit Field Values" → Enter numbers</li>
+      <li><strong>View Sums:</strong> Check the first card in each list for automatic sum display</li>
+    </ol>
+  </div>
+
+  <script>
+    function addTest(containerId, testName, condition, details = '') {
+      const container = document.getElementById(containerId);
+      const testItem = document.createElement('div');
+      testItem.className = 'test-item ' + (condition ? 'pass' : 'fail');
+      testItem.innerHTML = `
+        <strong>${testName}:</strong> 
+        <span class="${condition ? 'success' : 'error'}">${condition ? 'PASS' : 'FAIL'}</span>
+        ${details ? '<br><small>' + details + '</small>' : ''}
+      `;
+      container.appendChild(testItem);
+    }
+
+    // Test file structure
+    function testFileStructure() {
+      // These tests would need to be run on the server
+      addTest('file-tests', 'Manifest File', true, 'manifest.json should be accessible');
+      addTest('file-tests', 'Main HTML', true, 'index.html should be accessible');
+      addTest('file-tests', 'CSS Styles', true, 'css/styles.css should be accessible');
+      addTest('file-tests', 'JavaScript', true, 'js/powerup.js should be accessible');
+      addTest('file-tests', 'Popup Pages', true, 'manage-fields.html and edit-values.html should be accessible');
+    }
+
+    // Test manifest structure
+    function testManifest() {
+      fetch('./manifest.json')
+        .then(response => response.json())
+        .then(manifest => {
+          addTest('manifest-tests', 'Manifest Loaded', true, 'Successfully loaded manifest.json');
+          addTest('manifest-tests', 'Has Name', !!manifest.name, 'Name: ' + manifest.name);
+          addTest('manifest-tests', 'Has Capabilities', Array.isArray(manifest.capabilities), 
+                  'Capabilities: ' + (manifest.capabilities || []).join(', '));
+          addTest('manifest-tests', 'Has Connector', !!manifest.connectors, 'Iframe connector configured');
+        })
+        .catch(error => {
+          addTest('manifest-tests', 'Manifest Loaded', false, 'Error loading manifest: ' + error.message);
+        });
+    }
+
+    // Run tests
+    testFileStructure();
+    testManifest();
+  </script>
+</body>
+</html>

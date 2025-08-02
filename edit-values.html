@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Edit Field Values</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div class="field-config">
+    <h3>Field Values for This Card</h3>
+    <div id="fieldsContainer">
+      <!-- Fields will be loaded here -->
+    </div>
+    <button class="btn" onclick="saveValues()">Save Values</button>
+    <button class="btn btn-secondary" onclick="t.closePopup()">Cancel</button>
+  </div>
+
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script>
+    const t = TrelloPowerUp.iframe();
+    const FIELDS_KEY = 'sumup_fields';
+    const FIELD_VALUES_KEY = 'sumup_field_values';
+
+    function loadFieldValues() {
+      Promise.all([
+        t.get('board', 'shared', FIELDS_KEY),
+        t.get('card', 'shared', FIELD_VALUES_KEY)
+      ])
+      .then(function([fields, values]) {
+        fields = fields || [];
+        values = values || {};
+        
+        const container = document.getElementById('fieldsContainer');
+        
+        if (fields.length === 0) {
+          container.innerHTML = '<p>No fields available. Create fields first using the "Manage Fields" button on the board.</p>';
+          return;
+        }
+        
+        container.innerHTML = '';
+        
+        fields.forEach(function(field) {
+          const fieldValue = values[field.id] || 0;
+          
+          const fieldGroup = document.createElement('div');
+          fieldGroup.className = 'form-group';
+          fieldGroup.innerHTML = `
+            <label for="field_${field.id}">${field.name}:</label>
+            <input type="number" 
+                   id="field_${field.id}" 
+                   value="${fieldValue}" 
+                   min="0" 
+                   step="0.01"
+                   data-field-id="${field.id}">
+          `;
+          
+          container.appendChild(fieldGroup);
+        });
+      })
+      .catch(function(error) {
+        console.error('Error loading field values:', error);
+        document.getElementById('fieldsContainer').innerHTML = '<p>Error loading fields. Please try again.</p>';
+      });
+    }
+
+    function saveValues() {
+      const inputs = document.querySelectorAll('input[data-field-id]');
+      const values = {};
+      
+      inputs.forEach(function(input) {
+        const fieldId = input.getAttribute('data-field-id');
+        const value = parseFloat(input.value) || 0;
+        values[fieldId] = value;
+      });
+      
+      t.set('card', 'shared', FIELD_VALUES_KEY, values)
+        .then(function() {
+          // Trigger sum update
+          return updateListSums();
+        })
+        .then(function() {
+          t.closePopup();
+        })
+        .catch(function(error) {
+          console.error('Error saving values:', error);
+          alert('Error saving values. Please try again.');
+        });
+    }
+
+    function updateListSums() {
+      return t.board('all')
+        .then(function(board) {
+          return t.get('board', 'shared', FIELDS_KEY)
+            .then(function(fields) {
+              if (!fields || fields.length === 0) {
+                return;
+              }
+
+              // Find current card's list
+              let currentList = null;
+              board.lists.forEach(function(list) {
+                list.cards.forEach(function(card) {
+                  if (card.id === t.getContext().card) {
+                    currentList = list;
+                  }
+                });
+              });
+
+              if (!currentList || currentList.cards.length === 0) {
+                return;
+              }
+
+              // Calculate sums for the list
+              const sums = {};
+              fields.forEach(function(field) {
+                sums[field.id] = 0;
+              });
+
+              // Skip the first card (where we'll display the sum)
+              const cardsToSum = currentList.cards.slice(1);
+              
+              const promises = cardsToSum.map(function(card) {
+                return t.get(card.id, 'shared', FIELD_VALUES_KEY)
+                  .then(function(values) {
+                    values = values || {};
+                    fields.forEach(function(field) {
+                      sums[field.id] += parseFloat(values[field.id]) || 0;
+                    });
+                  });
+              });
+
+              return Promise.all(promises)
+                .then(function() {
+                  // Update the first card with the sum
+                  const firstCard = currentList.cards[0];
+                  return t.set(firstCard.id, 'shared', 'sum_display', sums);
+                });
+            });
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      loadFieldValues();
+    });
+  </script>
+</body>
+</html>

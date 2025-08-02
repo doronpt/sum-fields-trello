@@ -1,0 +1,17 @@
+{
+  "name": "Sum Up Fields",
+  "details": "Add custom numeric fields to cards and automatically calculate sums per list",
+  "author": "Sum Up Fields Team",
+  "capabilities": [
+    "card-buttons",
+    "card-detail-badges",
+    "board-buttons", 
+    "list-actions",
+    "card-badges"
+  ],
+  "connectors": {
+    "iframe": {
+      "url": "./index.html"
+    }
+  }
+}

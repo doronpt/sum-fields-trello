@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Manage Sum Up Fields</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div class="field-config">
+    <h3>Add New Field</h3>
+    <div class="form-group">
+      <label for="fieldName">Field Name:</label>
+      <input type="text" id="fieldName" placeholder="e.g., Points, Hours, Cost">
+    </div>
+    <button class="btn" onclick="addField()">Add Field</button>
+  </div>
+
+  <div class="field-list">
+    <h3>Existing Fields</h3>
+    <div id="fieldsList">
+      <!-- Fields will be loaded here -->
+    </div>
+  </div>
+
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script>
+    const t = TrelloPowerUp.iframe();
+    const FIELDS_KEY = 'sumup_fields';
+
+    function generateId() {
+      return '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    function loadFields() {
+      t.get('board', 'shared', FIELDS_KEY)
+        .then(function(fields) {
+          fields = fields || [];
+          const fieldsList = document.getElementById('fieldsList');
+          
+          if (fields.length === 0) {
+            fieldsList.innerHTML = '<p>No fields created yet. Add your first field above!</p>';
+            return;
+          }
+          
+          fieldsList.innerHTML = '';
+          fields.forEach(function(field, index) {
+            const fieldItem = document.createElement('div');
+            fieldItem.className = 'field-item';
+            fieldItem.innerHTML = `
+              <span class="field-name">${field.name}</span>
+              <button class="btn btn-secondary" onclick="removeField('${field.id}')">Remove</button>
+            `;
+            fieldsList.appendChild(fieldItem);
+          });
+        });
+    }
+
+    function addField() {
+      const fieldName = document.getElementById('fieldName').value.trim();
+      
+      if (!fieldName) {
+        alert('Please enter a field name');
+        return;
+      }
+
+      t.get('board', 'shared', FIELDS_KEY)
+        .then(function(fields) {
+          fields = fields || [];
+          
+          // Check if field name already exists
+          const exists = fields.some(function(field) {
+            return field.name.toLowerCase() === fieldName.toLowerCase();
+          });
+          
+          if (exists) {
+            alert('A field with this name already exists');
+            return;
+          }
+          
+          const newField = {
+            id: generateId(),
+            name: fieldName
+          };
+          
+          fields.push(newField);
+          
+          return t.set('board', 'shared', FIELDS_KEY, fields);
+        })
+        .then(function() {
+          document.getElementById('fieldName').value = '';
+          loadFields();
+          t.closePopup();
+        })
+        .catch(function(error) {
+          console.error('Error adding field:', error);
+          alert('Error adding field. Please try again.');
+        });
+    }
+
+    function removeField(fieldId) {
+      if (!confirm('Are you sure you want to remove this field? All values will be lost.')) {
+        return;
+      }
+
+      t.get('board', 'shared', FIELDS_KEY)
+        .then(function(fields) {
+          fields = fields || [];
+          const updatedFields = fields.filter(function(field) {
+            return field.id !== fieldId;
+          });
+          
+          return t.set('board', 'shared', FIELDS_KEY, updatedFields);
+        })
+        .then(function() {
+          loadFields();
+        })
+        .catch(function(error) {
+          console.error('Error removing field:', error);
+          alert('Error removing field. Please try again.');
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      loadFields();
+      
+      // Allow Enter key to add field
+      document.getElementById('fieldName').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          addField();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
