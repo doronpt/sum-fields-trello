@@ -86,9 +86,7 @@ TrelloPowerUp.initialize({
     },
 
     'card-badges': function (t, options) {
-        return t.render(function() {
-            return getCardBadges(t, options);
-        });
+        return getCardBadges(t, options);
     }
 }, {
     // Declare the appKey and appName if you have them
