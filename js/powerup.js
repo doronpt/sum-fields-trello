@@ -94,17 +94,9 @@ TrelloPowerUp.initialize({
     },
 
     storage: function (t, payload) {
-        console.log('Storage event received:', payload);
         if (payload.key === FIELD_VALUES_KEY && payload.visibility === 'shared') {
-            // Field values changed, update sums
-            console.log('Field values changed, updating sums...');
-            updateListSums(t)
-                .then(() => {
-                    console.log('Sums updated successfully after field change');
-                })
-                .catch(error => {
-                    console.error('Error updating sums after field change:', error);
-                });
+            // repaint the card that changed…
+            updateListSums();
         }
     }
 });
@@ -114,7 +106,7 @@ function generateId() {
   return '_' + Math.random().toString(36).substr(2, 9);
 }
 
-function updateListSums(t) {
+function updateListSums() {
   return t.board('all')
     .then(function(board) {
       return t.get('board', 'shared', FIELDS_KEY)
@@ -301,24 +293,27 @@ function calculateListSum(t, list, fields) {
 
 // Auto-update sums when cards change
 function initializeAutoUpdate() {
-  // Get Trello context for updates
-  const t = window.TrelloPowerUp.iframe();
 
   // Update sums periodically (every 10 seconds when board is active)
   setInterval(function() {
     if (document.visibilityState === 'visible') {
-      updateListSums(t);
+      updateListSums();
     }
   }, 10000);
   
   // Initial update
   setTimeout(function() {
-    updateListSums(t);
+    updateListSums();
   }, 1000);
 }
 
 // Initialize auto-update
 initializeAutoUpdate();
 
+TrelloPowerUp.on('storage', (e) => {
+    // e.key, e.id, e.scope, e.visibility, e.oldValue, e.newValue
+    // Re-calculate anything that depends on that data
+    updateListSums();
+});
 
 console.log('Sum Up Fields Power-Up initialized successfully');

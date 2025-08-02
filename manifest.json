@@ -9,8 +9,7 @@
     "card-badges",
     "card-back-section",
     "board-buttons",
-    "show-settings",
-    "storage"
+    "show-settings"
   ],
   "connectors": {
     "iframe": {
