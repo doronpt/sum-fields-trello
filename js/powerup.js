@@ -116,10 +116,10 @@ function updateListSums() {
 
     const t = globalT;
 
-    // Get board lists and cards
-    return t.lists('all')
-        .then(function(lists) {
-            if (!lists || lists.length === 0) {
+    // Get board data with lists and cards
+    return t.board('id', 'name', 'lists', 'cards')
+        .then(function(board) {
+            if (!board.lists || board.lists.length === 0) {
                 console.log('No lists found');
                 return Promise.resolve();
             }
@@ -131,65 +131,79 @@ function updateListSums() {
                         return Promise.resolve();
                     }
 
-                    console.log('Processing', lists.length, 'lists with', fields.length, 'fields');
+                    console.log('Processing', board.lists.length, 'lists with', fields.length, 'fields');
+                    console.log('Total cards on board:', board.cards.length);
+
+                    // Create a map of cards by list
+                    const cardsByList = {};
+                    board.cards.forEach(function(card) {
+                        if (!cardsByList[card.idList]) {
+                            cardsByList[card.idList] = [];
+                        }
+                        cardsByList[card.idList].push(card);
+                    });
 
                     // Process each list
-                    const listPromises = lists.map(function(list) {
-                        return t.cards('id', 'name')
-                            .then(function(cards) {
-                                // Filter cards that belong to this list
-                                const listCards = cards.filter(function(card) {
-                                    return card.idList === list.id;
-                                });
+                    const listPromises = board.lists.map(function(list) {
+                        const listCards = cardsByList[list.id] || [];
 
-                                if (listCards.length === 0) {
-                                    console.log('List', list.name, 'has no cards');
-                                    return Promise.resolve();
-                                }
+                        if (listCards.length === 0) {
+                            console.log('List', list.name, 'has no cards');
+                            return Promise.resolve();
+                        }
 
-                                console.log('List', list.name, 'has', listCards.length, 'cards');
+                        console.log('List', list.name, 'has', listCards.length, 'cards');
 
-                                // Calculate sums for each field
-                                const sums = {};
-                                fields.forEach(function(field) {
-                                    sums[field.id] = 0;
-                                });
+                        // Sort cards by position to ensure first card is actually first
+                        listCards.sort(function(a, b) {
+                            return a.pos - b.pos;
+                        });
 
-                                // Skip the first card (where we'll display the sum)
-                                const cardsToSum = listCards.slice(1);
+                        // Calculate sums for each field
+                        const sums = {};
+                        fields.forEach(function(field) {
+                            sums[field.id] = 0;
+                        });
 
-                                const cardPromises = cardsToSum.map(function(card) {
-                                    return t.get(card.id, 'shared', FIELD_VALUES_KEY)
-                                        .then(function(values) {
-                                            values = values || {};
-                                            fields.forEach(function(field) {
-                                                const value = parseFloat(values[field.id]) || 0;
-                                                sums[field.id] += value;
-                                                if (value > 0) {
-                                                    console.log('Card', card.name, 'field', field.name, 'value:', value);
-                                                }
-                                            });
-                                        })
-                                        .catch(function(error) {
-                                            console.warn('Error getting values for card', card.id, error);
-                                        });
-                                });
+                        // Skip the first card (where we'll display the sum)
+                        const cardsToSum = listCards.slice(1);
 
-                                return Promise.all(cardPromises)
-                                    .then(function() {
-                                        // Update the first card with the sum
-                                        const firstCard = listCards[0];
-                                        console.log('Setting sum on first card:', firstCard.name, 'sums:', sums);
-                                        return t.set(firstCard.id, 'shared', 'sum_display', sums)
-                                            .then(function() {
-                                                console.log('Sum display set successfully');
-                                                // Force a refresh of the badges
-                                                return t.render();
-                                            });
-                                    })
-                                    .catch(function(error) {
-                                        console.warn('Error setting sum for first card in list', list.id, error);
+                        if (cardsToSum.length === 0) {
+                            console.log('List', list.name, 'has only one card, no cards to sum');
+                            return Promise.resolve();
+                        }
+
+                        const cardPromises = cardsToSum.map(function(card) {
+                            return t.get(card.id, 'shared', FIELD_VALUES_KEY)
+                                .then(function(values) {
+                                    values = values || {};
+                                    fields.forEach(function(field) {
+                                        const value = parseFloat(values[field.id]) || 0;
+                                        sums[field.id] += value;
+                                        if (value > 0) {
+                                            console.log('Card', card.name, 'field', field.name, 'value:', value);
+                                        }
                                     });
+                                })
+                                .catch(function(error) {
+                                    console.warn('Error getting values for card', card.id, error);
+                                });
+                        });
+
+                        return Promise.all(cardPromises)
+                            .then(function() {
+                                // Update the first card with the sum
+                                const firstCard = listCards[0];
+                                console.log('Setting sum on first card:', firstCard.name, 'sums:', sums);
+                                return t.set(firstCard.id, 'shared', 'sum_display', sums)
+                                    .then(function() {
+                                        console.log('Sum display set successfully for', firstCard.name);
+                                        // Force a refresh of the badges
+                                        return t.render();
+                                    });
+                            })
+                            .catch(function(error) {
+                                console.warn('Error setting sum for first card in list', list.id, error);
                             });
                     });
 
@@ -234,84 +248,43 @@ function getCardBadges(t, options) {
                 return [];
             }
 
-            const cardId = t.getContext().card;
+            // Get both individual values and sum display
+            return Promise.all([
+                t.get('card', 'shared', FIELD_VALUES_KEY),
+                t.get('card', 'shared', 'sum_display')
+            ]).then(function(results) {
+                const values = results[0] || {};
+                const sumDisplay = results[1];
+                const badges = [];
 
-            // Get the card's position in its list
-            return t.list('all')
-                .then(function(list) {
-                    return t.cards('id')
-                        .then(function(allCards) {
-                            // Filter cards in this list
-                            const listCards = allCards.filter(function(card) {
-                                return card.idList === list.id;
-                            });
-
-                            const isFirstCard = listCards.length > 0 && listCards[0].id === cardId;
-
-                            // Get individual field values
-                            return t.get('card', 'shared', FIELD_VALUES_KEY)
-                                .then(function(values) {
-                                    values = values || {};
-                                    const badges = [];
-
-                                    // Show individual values
-                                    fields.forEach(function(field) {
-                                        const value = values[field.id] || 0;
-                                        if (value > 0) {
-                                            badges.push({
-                                                text: field.name + ': ' + value,
-                                                color: 'blue',
-                                                refresh: 10 // Refresh every 10 seconds
-                                            });
-                                        }
-                                    });
-
-                                    // If this is the first card, also show the sum
-                                    if (isFirstCard) {
-                                        return t.get(cardId, 'shared', 'sum_display')
-                                            .then(function(sums) {
-                                                if (sums) {
-                                                    fields.forEach(function(field) {
-                                                        const sum = sums[field.id] || 0;
-                                                        if (sum > 0) {
-                                                            badges.push({
-                                                                text: '∑ ' + field.name + ': ' + sum,
-                                                                color: 'green',
-                                                                refresh: 10 // Refresh every 10 seconds
-                                                            });
-                                                        }
-                                                    });
-                                                }
-                                                return badges;
-                                            });
-                                    }
-
-                                    return badges;
-                                });
+                // Show individual values
+                fields.forEach(function(field) {
+                    const value = values[field.id] || 0;
+                    if (value > 0) {
+                        badges.push({
+                            text: field.name + ': ' + value,
+                            color: 'blue',
+                            refresh: 5 // Refresh every 5 seconds
                         });
-                })
-                .catch(function(error) {
-                    console.warn('Error getting card badges:', error);
-                    // Fall back to just showing individual values
-                    return t.get('card', 'shared', FIELD_VALUES_KEY)
-                        .then(function(values) {
-                            values = values || {};
-                            const badges = [];
-
-                            fields.forEach(function(field) {
-                                const value = values[field.id] || 0;
-                                if (value > 0) {
-                                    badges.push({
-                                        text: field.name + ': ' + value,
-                                        color: 'blue',
-                                        refresh: 10
-                                    });
-                                }
-                            });
-
-                            return badges;
-                        });
+                    }
                 });
+
+                // If this card has sum display data, show it
+                if (sumDisplay) {
+                    fields.forEach(function(field) {
+                        const sum = sumDisplay[field.id] || 0;
+                        if (sum > 0) {
+                            badges.push({
+                                text: '∑ ' + field.name + ': ' + sum,
+                                color: 'green',
+                                refresh: 5 // Refresh every 5 seconds
+                            });
+                        }
+                    });
+                }
+
+                return badges;
+            });
         })
         .catch(function(error) {
             console.warn('Error in getCardBadges:', error);
