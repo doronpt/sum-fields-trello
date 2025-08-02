@@ -83,13 +83,8 @@
         })
         .then(function() {
           console.log('All list sums updated');
-          // Notify parent that we're done and close popup
-          return t.notifyParent('done').then(function() {
-            return t.closePopup();
-          }).catch(function() {
-            // If notify fails, still close popup
-            return t.closePopup();
-          });
+          // Close popup - the main powerup will handle badge refresh automatically
+          return t.closePopup();
         })
         .catch(function(error) {
           console.error('Error saving values:', error);

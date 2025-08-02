@@ -25,7 +25,11 @@ TrelloPowerUp.initialize({
     },
 
     'card-buttons': function(t, options) {
-        return t.get('board', 'shared', FIELDS_KEY)
+        const timeoutPromise = new Promise(function(resolve) {
+            setTimeout(function() { resolve([]); }, 2000);
+        });
+
+        const buttonsPromise = t.get('board', 'shared', FIELDS_KEY)
             .then(function(fields) {
                 if (!fields || fields.length === 0) {
                     return [];
@@ -50,10 +54,16 @@ TrelloPowerUp.initialize({
                 console.error('Error in card-buttons:', error);
                 return [];
             });
+
+        return Promise.race([buttonsPromise, timeoutPromise]);
     },
 
     'card-detail-badges': function(t, options) {
-        return t.get('board', 'shared', FIELDS_KEY)
+        const timeoutPromise = new Promise(function(resolve) {
+            setTimeout(function() { resolve([]); }, 2000);
+        });
+
+        const detailBadgesPromise = t.get('board', 'shared', FIELDS_KEY)
             .then(function(fields) {
                 if (!fields || fields.length === 0) {
                     return [];
@@ -82,7 +92,13 @@ TrelloPowerUp.initialize({
 
                         return badges;
                     });
+            })
+            .catch(function(error) {
+                console.error('Error in card-detail-badges:', error);
+                return [];
             });
+
+        return Promise.race([detailBadgesPromise, timeoutPromise]);
     },
 
     'card-badges': function (t, options) {
@@ -99,9 +115,15 @@ function generateId() {
     return '_' + Math.random().toString(36).substr(2, 9);
 }
 
-// Calculate sum for cards in the same list
+// Calculate sum for cards in the same list with timeout protection
 function calculateListSum(t) {
-    return Promise.all([
+    const timeoutPromise = new Promise(function(resolve) {
+        setTimeout(function() {
+            resolve(null);
+        }, 3000); // 3 second timeout
+    });
+
+    const calculationPromise = Promise.all([
         t.card('id', 'idList'),
         t.cards('id', 'idList', 'name', 'pos'),
         t.get('board', 'shared', FIELDS_KEY)
@@ -137,7 +159,11 @@ function calculateListSum(t) {
         });
 
         const cardsToSum = listCards.slice(1);
-        const promises = cardsToSum.map(function(card) {
+        
+        // Limit to 20 cards to prevent timeout
+        const limitedCards = cardsToSum.slice(0, 20);
+        
+        const promises = limitedCards.map(function(card) {
             return t.get(card.id, 'shared', FIELD_VALUES_KEY)
                 .then(function(values) {
                     if (values) {
@@ -158,11 +184,19 @@ function calculateListSum(t) {
         console.error('Error calculating list sum:', error);
         return null;
     });
+
+    return Promise.race([calculationPromise, timeoutPromise]);
 }
 
 // Get card badges - shows individual values and sum if first card
 function getCardBadges(t, options) {
-    return t.get('board', 'shared', FIELDS_KEY)
+    const timeoutPromise = new Promise(function(resolve) {
+        setTimeout(function() {
+            resolve([]);
+        }, 4000); // 4 second timeout for the entire badge calculation
+    });
+
+    const badgePromise = t.get('board', 'shared', FIELDS_KEY)
         .then(function(fields) {
             if (!fields || fields.length === 0) {
                 return [];
@@ -208,6 +242,8 @@ function getCardBadges(t, options) {
             console.warn('Error in getCardBadges:', error);
             return [];
         });
+
+    return Promise.race([badgePromise, timeoutPromise]);
 }
 
 
