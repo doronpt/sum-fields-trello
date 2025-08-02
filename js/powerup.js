@@ -213,22 +213,7 @@ var t = window.TrelloPowerUp.iframe();
 
 // Render the initial state of the Power-Up
 t.render(function () {
-    calculateListSum(t)
-        .then(function(sums) {
-            if (sums) {
-                // This is the first card, add sum badges
-                fields.forEach(function(field) {
-                    const sum = sums[field.id] || 0;
-                    if (sum > 0) {
-                        badges.push({
-                            text: '∑ ' + field.name + ': ' + sum,
-                            color: 'green'
-                        });
-                    }
-                });
-            }
-            return badges;
-        });
+    getCardBadges(t);
 });
 
 console.log('Sum Up Fields Power-Up initialized successfully');
