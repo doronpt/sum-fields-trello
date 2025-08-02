@@ -68,7 +68,19 @@ TrelloPowerUp.initialize({
               badges.push({
                 title: field.name,
                 text: field.name + ': ' + value,
-                color: 'blue'
+                  color: 'blue',
+                  refreshOnClick: true,
+                  callback: function (t) {
+                      return t.popup({
+                          title: 'Edit ' + field.name,
+                          url: './edit-values.html',   // reuse what you already have
+                          height: 300
+                          // args: {                      // let the popup know which field/card it came from
+                          //     fieldId: field.id,
+                          //     fieldName: field.name
+                          // }
+                      });
+                  }
               });
             });
 
@@ -184,8 +196,20 @@ function getCardBadges(t, options) {
             const value = values[field.id] || 0;
             if (value > 0) {
               badges.push({
-                text: field.name + ': ' + value,
-                color: 'blue'
+                  text: field.name + ': ' + value,
+                  color: 'blue',
+                  refreshOnClick: true,
+                  callback: function (t) {
+                      return t.popup({
+                          title: 'Edit ' + field.name,
+                          url: './edit-values.html',   // reuse what you already have
+                          height: 300
+                          // args: {                      // let the popup know which field/card it came from
+                          //     fieldId: field.id,
+                          //     fieldName: field.name
+                          // }
+                      });
+                  }
               });
             }
           });
