@@ -139,6 +139,16 @@
         });
     }
 
+    t.render(async function() {
+      updateListSums()
+        .then(function() {
+          console.log('List sums updated successfully');
+        })
+        .catch(function(error) {
+          console.error('Error updating list sums:', error);
+        });
+    });
+
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       loadFieldValues();
