@@ -293,9 +293,7 @@ function calculateListSum(t, list, fields) {
 
 // Auto-update sums when cards change
 function initializeAutoUpdate() {
-  // Set up event handlers
-  setupEventHandlers();
-  
+
   // Update sums periodically (every 10 seconds when board is active)
   setInterval(function() {
     if (document.visibilityState === 'visible') {
@@ -311,5 +309,11 @@ function initializeAutoUpdate() {
 
 // Initialize auto-update
 initializeAutoUpdate();
+
+TrelloPowerUp.on('storage', (e) => {
+    // e.key, e.id, e.scope, e.visibility, e.oldValue, e.newValue
+    // Re-calculate anything that depends on that data
+    updateListSums();
+});
 
 console.log('Sum Up Fields Power-Up initialized successfully');
