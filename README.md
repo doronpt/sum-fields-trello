@@ -62,6 +62,10 @@ SumUpFieldsTrello/
 ├── edit-values.html        # Card value editing interface
 ├── css/
 │   └── styles.css          # Styling for all interfaces
+├── icons/
+│   ├── sum-icon.svg        # Sum symbol (∑) icons for light/dark themes
+│   ├── edit-icon.svg       # Edit/pencil icons for light/dark themes
+│   └── README.md           # Icon documentation
 └── js/
     └── powerup.js          # Main Power-Up logic
 ```

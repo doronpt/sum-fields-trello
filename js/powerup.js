@@ -22,8 +22,8 @@ TrelloPowerUp.initialize({
         
         return [{
           icon: {
-            dark: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTExIDRINEEyIDIgMCAwIDAgMiA2VjE4QTIgMiAwIDAgMCA0IDIwSDE2QTIgMiAwIDAgMCAxOCAxOFYxMU0xOC41IDNBMS41IDEuNSAwIDAgMSAyMSA0LjVMMTMuNSAxMkwxMCAxM0wxMSA5LjVMMTguNSAzWiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K',
-            light: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTExIDRINEEyIDIgMCAwIDAgMiA2VjE4QTIgMiAwIDAgMCA0IDIwSDEyQTIgMiAwIDAgMCAxNCAxOFYxMU0xOC41IDNBMS41IDEuNSAwIDAgMSAyMSA0LjVMMTMuNSAxMkwxMCAxM0wxMSA5LjVMMTguNSAzWiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K'
+            dark: './icons/edit-icon-dark.svg',
+            light: './icons/edit-icon-light.svg'
           },
           text: 'Edit Field Values',
           callback: function(t) {
