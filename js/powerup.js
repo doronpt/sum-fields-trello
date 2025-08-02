@@ -116,49 +116,80 @@ function updateListSums() {
 
     const t = globalT;
 
-    return t.board('all')
-        .then(function(board) {
+    // Get board lists and cards
+    return t.lists('all')
+        .then(function(lists) {
+            if (!lists || lists.length === 0) {
+                console.log('No lists found');
+                return Promise.resolve();
+            }
+
             return t.get('board', 'shared', FIELDS_KEY)
                 .then(function(fields) {
                     if (!fields || fields.length === 0) {
+                        console.log('No fields configured');
                         return Promise.resolve();
                     }
 
+                    console.log('Processing', lists.length, 'lists with', fields.length, 'fields');
+
                     // Process each list
-                    const listPromises = board.lists.map(function(list) {
-                        const cards = list.cards;
-                        if (!cards || cards.length === 0) return Promise.resolve();
-
-                        // Calculate sums for each field
-                        const sums = {};
-                        fields.forEach(function(field) {
-                            sums[field.id] = 0;
-                        });
-
-                        // Skip the first card (where we'll display the sum)
-                        const cardsToSum = cards.slice(1);
-
-                        const cardPromises = cardsToSum.map(function(card) {
-                            return t.get(card.id, 'shared', FIELD_VALUES_KEY)
-                                .then(function(values) {
-                                    values = values || {};
-                                    fields.forEach(function(field) {
-                                        sums[field.id] += parseFloat(values[field.id]) || 0;
-                                    });
-                                })
-                                .catch(function(error) {
-                                    console.warn('Error getting values for card', card.id, error);
+                    const listPromises = lists.map(function(list) {
+                        return t.cards('id', 'name')
+                            .then(function(cards) {
+                                // Filter cards that belong to this list
+                                const listCards = cards.filter(function(card) {
+                                    return card.idList === list.id;
                                 });
-                        });
 
-                        return Promise.all(cardPromises)
-                            .then(function() {
-                                // Update the first card with the sum
-                                const firstCard = cards[0];
-                                return t.set(firstCard.id, 'shared', 'sum_display', sums);
-                            })
-                            .catch(function(error) {
-                                console.warn('Error setting sum for first card in list', list.id, error);
+                                if (listCards.length === 0) {
+                                    console.log('List', list.name, 'has no cards');
+                                    return Promise.resolve();
+                                }
+
+                                console.log('List', list.name, 'has', listCards.length, 'cards');
+
+                                // Calculate sums for each field
+                                const sums = {};
+                                fields.forEach(function(field) {
+                                    sums[field.id] = 0;
+                                });
+
+                                // Skip the first card (where we'll display the sum)
+                                const cardsToSum = listCards.slice(1);
+
+                                const cardPromises = cardsToSum.map(function(card) {
+                                    return t.get(card.id, 'shared', FIELD_VALUES_KEY)
+                                        .then(function(values) {
+                                            values = values || {};
+                                            fields.forEach(function(field) {
+                                                const value = parseFloat(values[field.id]) || 0;
+                                                sums[field.id] += value;
+                                                if (value > 0) {
+                                                    console.log('Card', card.name, 'field', field.name, 'value:', value);
+                                                }
+                                            });
+                                        })
+                                        .catch(function(error) {
+                                            console.warn('Error getting values for card', card.id, error);
+                                        });
+                                });
+
+                                return Promise.all(cardPromises)
+                                    .then(function() {
+                                        // Update the first card with the sum
+                                        const firstCard = listCards[0];
+                                        console.log('Setting sum on first card:', firstCard.name, 'sums:', sums);
+                                        return t.set(firstCard.id, 'shared', 'sum_display', sums)
+                                            .then(function() {
+                                                console.log('Sum display set successfully');
+                                                // Force a refresh of the badges
+                                                return t.render();
+                                            });
+                                    })
+                                    .catch(function(error) {
+                                        console.warn('Error setting sum for first card in list', list.id, error);
+                                    });
                             });
                     });
 
@@ -167,6 +198,7 @@ function updateListSums() {
         })
         .catch(function(error) {
             console.error('Error updating list sums:', error);
+            console.error('Error stack:', error.stack);
         });
 }
 
@@ -202,67 +234,87 @@ function getCardBadges(t, options) {
                 return [];
             }
 
-            // Always show individual field values for now
-            return t.get('card', 'shared', FIELD_VALUES_KEY)
-                .then(function(values) {
-                    values = values || {};
-                    const badges = [];
+            const cardId = t.getContext().card;
 
-                    fields.forEach(function(field) {
-                        const value = values[field.id] || 0;
-                        if (value > 0) {
-                            badges.push({
-                                text: field.name + ': ' + value,
-                                color: 'blue',
-                                refreshOnClick: true,
-                                callback: function (t) {
-                                    return t.popup({
-                                        title: 'Edit ' + field.name,
-                                        url: './edit-values.html',
-                                        height: 300
+            // Get the card's position in its list
+            return t.list('all')
+                .then(function(list) {
+                    return t.cards('id')
+                        .then(function(allCards) {
+                            // Filter cards in this list
+                            const listCards = allCards.filter(function(card) {
+                                return card.idList === list.id;
+                            });
+
+                            const isFirstCard = listCards.length > 0 && listCards[0].id === cardId;
+
+                            // Get individual field values
+                            return t.get('card', 'shared', FIELD_VALUES_KEY)
+                                .then(function(values) {
+                                    values = values || {};
+                                    const badges = [];
+
+                                    // Show individual values
+                                    fields.forEach(function(field) {
+                                        const value = values[field.id] || 0;
+                                        if (value > 0) {
+                                            badges.push({
+                                                text: field.name + ': ' + value,
+                                                color: 'blue',
+                                                refresh: 10 // Refresh every 10 seconds
+                                            });
+                                        }
+                                    });
+
+                                    // If this is the first card, also show the sum
+                                    if (isFirstCard) {
+                                        return t.get(cardId, 'shared', 'sum_display')
+                                            .then(function(sums) {
+                                                if (sums) {
+                                                    fields.forEach(function(field) {
+                                                        const sum = sums[field.id] || 0;
+                                                        if (sum > 0) {
+                                                            badges.push({
+                                                                text: '∑ ' + field.name + ': ' + sum,
+                                                                color: 'green',
+                                                                refresh: 10 // Refresh every 10 seconds
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                                return badges;
+                                            });
+                                    }
+
+                                    return badges;
+                                });
+                        });
+                })
+                .catch(function(error) {
+                    console.warn('Error getting card badges:', error);
+                    // Fall back to just showing individual values
+                    return t.get('card', 'shared', FIELD_VALUES_KEY)
+                        .then(function(values) {
+                            values = values || {};
+                            const badges = [];
+
+                            fields.forEach(function(field) {
+                                const value = values[field.id] || 0;
+                                if (value > 0) {
+                                    badges.push({
+                                        text: field.name + ': ' + value,
+                                        color: 'blue',
+                                        refresh: 10
                                     });
                                 }
                             });
-                        }
-                    });
 
-                    // Check if this is the first card in list for sum display
-                    return t.list('all')
-                        .then(function(list) {
-                            const cards = list.cards || [];
-                            const cardId = t.getContext().card;
-                            const isFirstCard = cards.length > 0 && cards[0].id === cardId;
-
-                            if (isFirstCard) {
-                                // Calculate and show sum for this list
-                                return calculateListSum(t, list, fields)
-                                    .then(function(sums) {
-                                        const sumBadges = [];
-
-                                        fields.forEach(function(field) {
-                                            const sum = sums[field.id] || 0;
-                                            if (sum > 0) {
-                                                sumBadges.push({
-                                                    text: '∑ ' + field.name + ': ' + sum,
-                                                    color: 'green'
-                                                });
-                                            }
-                                        });
-
-                                        return badges.concat(sumBadges);
-                                    });
-                            }
-
-                            return badges;
-                        })
-                        .catch(function(error) {
-                            console.warn('Error getting list context:', error);
                             return badges;
                         });
                 });
         })
         .catch(function(error) {
-            console.warn('Error getting card badges:', error);
+            console.warn('Error in getCardBadges:', error);
             return [];
         });
 }
@@ -301,29 +353,50 @@ function calculateListSum(t, list, fields) {
 
 // Auto-update sums when cards change
 function initializeAutoUpdate() {
-    // Update sums periodically (every 10 seconds when board is active)
+    // Update sums periodically (every 5 seconds when board is active)
     setInterval(function() {
         if (document.visibilityState === 'visible' && globalT) {
+            console.log('Periodic update triggered');
             updateListSums();
         }
-    }, 10000);
+    }, 5000);
 
-    // Initial update
+    // Initial update after a short delay
     setTimeout(function() {
         if (globalT) {
+            console.log('Initial update triggered');
             updateListSums();
         }
-    }, 1000);
+    }, 2000);
 }
 
 // Initialize auto-update
 initializeAutoUpdate();
 
 // Listen for storage changes using the Trello Power-Up iframe communication
-// Instead of TrelloPowerUp.on which doesn't exist
 window.addEventListener('message', function(event) {
-    // Check if this is a storage update message from Trello
-    if (event.data && event.data.type === 'storage' && globalT) {
+    // Check if this is a message from Trello
+    if (event.origin !== 'https://trello.com') return;
+
+    // Log all messages for debugging
+    console.log('Received message:', event.data);
+
+    // Update when we receive any relevant message
+    if (event.data && globalT) {
+        // Trigger update for various message types
+        if (event.data.type === 'render' ||
+            event.data.command === 'interactive' ||
+            event.data.command === 'update-card') {
+            console.log('Message triggered update');
+            updateListSums();
+        }
+    }
+});
+
+// Also listen for visibility changes
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && globalT) {
+        console.log('Visibility change triggered update');
         updateListSums();
     }
 });
