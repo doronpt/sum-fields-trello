@@ -5,9 +5,8 @@
   "capabilities": [
     "card-buttons",
     "card-detail-badges",
-    "board-buttons", 
-    "list-actions",
-    "card-badges"
+    "card-badges",
+    "show-settings"
   ],
   "connectors": {
     "iframe": {

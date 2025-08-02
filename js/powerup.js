@@ -1,24 +1,16 @@
 // Sum Up Fields Power-Up
-const t = TrelloPowerUp.iframe();
-
 // Storage keys
 const FIELDS_KEY = 'sumup_fields';
 const FIELD_VALUES_KEY = 'sumup_field_values';
 
 // Initialize the Power-Up
 TrelloPowerUp.initialize({
-  'board-buttons': function(t, options) {
-    return [{
-      icon: 'https://cdn.glitch.com/1b42d7fe-bda8-4af8-a6c8-eff0cea9e08a%2Frocket-ship.png?1494946700421',
-      text: 'Manage Fields',
-      callback: function(t) {
-        return t.popup({
-          title: 'Manage Sum Up Fields',
-          url: './manage-fields.html',
-          height: 400
-        });
-      }
-    }];
+  'show-settings': function(t, options) {
+    return t.popup({
+      title: 'Sum Up Fields Settings',
+      url: './settings.html',
+      height: 500
+    });
   },
 
   'card-buttons': function(t, options) {
@@ -29,7 +21,10 @@ TrelloPowerUp.initialize({
         }
         
         return [{
-          icon: 'https://cdn.glitch.com/1b42d7fe-bda8-4af8-a6c8-eff0cea9e08a%2Fedit.png?1494946700421',
+          icon: {
+            dark: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTExIDRINEEyIDIgMCAwIDAgMiA2VjE4QTIgMiAwIDAgMCA0IDIwSDE2QTIgMiAwIDAgMCAxOCAxOFYxMU0xOC41IDNBMS41IDEuNSAwIDAgMSAyMSA0LjVMMTMuNSAxMkwxMCAxM0wxMSA5LjVMMTguNSAzWiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K',
+            light: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTExIDRINEEyIDIgMCAwIDAgMiA2VjE4QTIgMiAwIDAgMCA0IDIwSDEyQTIgMiAwIDAgMCAxNCAxOFYxMU0xOC41IDNBMS41IDEuNSAwIDAgMSAyMSA0LjVMMTMuNSAxMkwxMCAxM0wxMSA5LjVMMTguNSAzWiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K'
+          },
           text: 'Edit Field Values',
           callback: function(t) {
             return t.popup({

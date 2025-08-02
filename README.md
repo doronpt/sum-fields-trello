@@ -34,8 +34,8 @@ For production use, deploy the files to a web server with HTTPS enabled.
 ### 1. Create Fields
 
 1. Open any Trello board with the Power-Up enabled
-2. Click the "Manage Fields" button in the board menu
-3. Enter a field name (e.g., "Points", "Hours", "Story Points")
+2. Go to Board Menu → Power-Ups → Find "Sum Up Fields" → Click "Settings"
+3. Enter a field name (e.g., "Story Points", "Hours", "Cost")
 4. Click "Add Field"
 5. Repeat for additional fields
 
@@ -58,7 +58,7 @@ For production use, deploy the files to a web server with HTTPS enabled.
 SumUpFieldsTrello/
 ├── manifest.json           # Power-Up configuration
 ├── index.html              # Main Power-Up entry point
-├── manage-fields.html      # Field management interface
+├── settings.html           # Power-Up settings page (field management)
 ├── edit-values.html        # Card value editing interface
 ├── css/
 │   └── styles.css          # Styling for all interfaces
