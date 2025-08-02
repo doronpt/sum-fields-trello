@@ -5,6 +5,8 @@ console.log('Sum Up Fields Power-Up loading...');
 const FIELDS_KEY = 'sumup_fields';
 const FIELD_VALUES_KEY = 'sumup_field_values';
 
+var globalT = null;
+
 // Initialize the Power-Up
 TrelloPowerUp.initialize({
     'board-buttons': function(t, options) {
@@ -85,6 +87,7 @@ TrelloPowerUp.initialize({
     },
 
     'card-badges': function (t, options) {
+        globalT = t;
         return getCardBadges(t, options);
     }
 }, {
@@ -209,10 +212,10 @@ function getCardBadges(t, options) {
         });
 }
 
-var t = window.TrelloPowerUp.iframe();
+
 
 // Render the initial state of the Power-Up
-t.render(function () {
+globalT.render(function () {
     getCardBadges(t);
 });
 
