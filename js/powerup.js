@@ -79,7 +79,7 @@ TrelloPowerUp.initialize({
                             badges.push({
                                 title: field.name,
                                 text: field.name + ': ' + value,
-                                color: 'blue',
+                                color: 'red',
                                 callback: function (t) {
                                     return t.popup({
                                         title: 'Edit ' + field.name,
@@ -244,7 +244,7 @@ function getCardBadgeForField(t, options, field) {
             if (value > 0) {
                 return {
                     text: field.name + ': ' + value,
-                    color: 'blue'
+                    color: 'red'
                 };
             }
 
@@ -297,7 +297,7 @@ function getCardBadges(t, options) {
                         if (value > 0) {
                             badges.push({
                                 text: field.name + ': ' + value,
-                                color: 'blue'
+                                color: 'red'
                             });
                         }
                     });
