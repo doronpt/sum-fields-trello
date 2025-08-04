@@ -166,6 +166,7 @@
     }
 
     t.render(function() {
+      console.log('Power-Up rendered, loading field values...');
       updateAllListSums()
         .then(function() {
           console.log('All list sums updated successfully');
